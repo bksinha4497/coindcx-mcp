@@ -15,7 +15,7 @@ async def test_server():
         # Test listing tools
         print("\n1. Testing tool listing...")
         from coindcx_mcp.server import list_tools
-        tools = list_tools()
+        tools = await list_tools()
         print(f"Found {len(tools)} tools:")
         for tool in tools:
             print(f"  - {tool.name}: {tool.description}")
@@ -26,14 +26,14 @@ async def test_server():
         # Test get_ticker
         try:
             from coindcx_mcp.server import call_tool
-            result = call_tool("get_ticker", {})
+            result = await call_tool("get_ticker", {})
             print("✓ get_ticker: Success")
         except Exception as e:
             print(f"✗ get_ticker: {str(e)}")
         
         # Test get_markets
         try:
-            result = call_tool("get_markets", {})
+            result = await call_tool("get_markets", {})
             print("✓ get_markets: Success")
         except Exception as e:
             print(f"✗ get_markets: {str(e)}")
@@ -43,7 +43,7 @@ async def test_server():
         
         # Test get_balances (requires auth)
         try:
-            result = call_tool("get_balances", {})
+            result = await call_tool("get_balances", {})
             if "Error" in str(result):
                 print("✗ get_balances: Authentication required")
             else:
@@ -58,7 +58,7 @@ async def test_server():
                 "coindcx": {
                     "command": "python",
                     "args": ["-m", "coindcx_mcp.server"],
-                    "cwd": "/Users/biswajit.kumar/coindcx-mcp"
+                    "cwd": "/Users/biswajit.kumar/Desktop/projects/coindcx-mcp"
                 }
             }
         }, indent=2))

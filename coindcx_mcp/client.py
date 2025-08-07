@@ -14,12 +14,11 @@ class CoinDCXClient:
         self.base_url = base_url
         self.client = httpx.Client(timeout=30.0)
 
-    def _generate_signature(self, payload: str, timestamp: int) -> str:
+    def _generate_signature(self, payload: str) -> str:
         """Generate HMAC-SHA256 signature for authenticated requests."""
-        message = payload + str(timestamp)
         signature = hmac.new(
             self.secret_key.encode('utf-8'),
-            message.encode('utf-8'),
+            payload.encode('utf-8'),
             hashlib.sha256
         ).hexdigest()
         return signature
@@ -31,8 +30,11 @@ class CoinDCXClient:
         if payload is None:
             payload = {}
         
+        # Add timestamp to payload as required by CoinDCX API
+        payload["timestamp"] = timestamp
+        
         payload_str = json.dumps(payload, separators=(',', ':'))
-        signature = self._generate_signature(payload_str, timestamp)
+        signature = self._generate_signature(payload_str)
         
         headers = {
             'Content-Type': 'application/json',
@@ -42,10 +44,8 @@ class CoinDCXClient:
         
         url = f"{self.base_url}{endpoint}"
         
-        if method.upper() == 'GET':
-            response = self.client.get(url, headers=headers, params=payload)
-        else:
-            response = self.client.post(url, headers=headers, json=payload)
+        # CoinDCX authenticated endpoints are all POST requests
+        response = self.client.post(url, headers=headers, data=payload_str)
         
         response.raise_for_status()
         return response.json()
@@ -197,11 +197,11 @@ class CoinDCXClient:
         }
         
         if price is not None:
-            payload["price_per_unit"] = price
+            payload["price_per_unit"] = str(price)  # Convert to string as required by API
         if quantity is not None:
-            payload["quantity"] = quantity
+            payload["quantity"] = str(quantity)  # Convert to string as required by API
         if total_quantity is not None:
-            payload["total_quantity"] = total_quantity
+            payload["total_quantity"] = str(total_quantity)  # Convert to string as required by API
         if client_order_id is not None:
             payload["client_order_id"] = client_order_id
             
@@ -232,14 +232,14 @@ class CoinDCXClient:
         """Get order history."""
         payload = {"limit": limit}
         if market:
-            payload["market"] = market
+            payload["symbol"] = market  # Use 'symbol' instead of 'market'
         if side:
             payload["side"] = side
         if from_timestamp:
-            payload["from"] = from_timestamp
+            payload["from_timestamp"] = from_timestamp  # Correct parameter name
         if to_timestamp:
-            payload["to"] = to_timestamp
-        return self._make_authenticated_request("POST", "/exchange/v1/orders", payload)
+            payload["to_timestamp"] = to_timestamp  # Correct parameter name
+        return self._make_authenticated_request("POST", "/exchange/v1/orders/trade_history", payload)
 
     def close(self):
         """Close the HTTP client."""
